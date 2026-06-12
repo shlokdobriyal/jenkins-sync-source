@@ -1,34 +1,72 @@
 pipeline {
-    agent any
+agent any
 
-    stages {
+```
+environment {
+    TARGET_REPO = ""
+}
 
-        stage('Detect Changes') {
-            steps {
-                script {
+stages {
 
-                    def changedFiles = bat(
-                        script: '@git diff --name-only HEAD~1 HEAD',
-                        returnStdout: true
-                    ).trim()
+    stage('Detect Changes') {
+        steps {
+            script {
 
-                    echo "Changed Files:"
-                    echo changedFiles
+                def changedFiles = bat(
+                    script: '@git diff --name-only HEAD~1 HEAD',
+                    returnStdout: true
+                ).trim()
 
-                    if (changedFiles.contains("gcc-config/")) {
+                echo "Changed Files:"
+                echo changedFiles
 
-                        echo "GCC Environment Selected"
+                if (changedFiles.contains("gcc-config/")) {
 
-                    } else if (changedFiles.contains("mini-dev-config/")) {
+                    env.TARGET_REPO = "gcc-mirror-repo"
+                    echo "GCC Environment Selected"
 
-                        echo "Mini Dev Environment Selected"
+                } else if (changedFiles.contains("mini-dev-config/")) {
 
-                    } else {
+                    env.TARGET_REPO = "mini-dev-mirror-repo"
+                    echo "Mini Dev Environment Selected"
 
-                        echo "Default Environment Selected"
-                    }
+                } else {
+
+                    echo "Default Environment Selected"
                 }
             }
         }
     }
+
+    stage('Mirror Repository') {
+
+        when {
+            expression {
+                return env.TARGET_REPO?.trim()
+            }
+        }
+
+        steps {
+
+            withCredentials([
+                usernamePassword(
+                    credentialsId: 'github-creds',
+                    usernameVariable: 'GIT_USER',
+                    passwordVariable: 'GIT_TOKEN'
+                )
+            ]) {
+
+                bat """
+                git remote remove mirror 2>NUL
+
+                git remote add mirror https://%GIT_USER%:%GIT_TOKEN%@github.com/shlokdobriyal/%TARGET_REPO%.git
+
+                git push --mirror mirror
+                """
+            }
+        }
+    }
+}
+```
+
 }
