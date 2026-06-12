@@ -1,1 +1,2 @@
-version: 3
+environment: gcc
+version: 4
