@@ -1,9 +1,9 @@
 pipeline {
 agent any
 
-```
+
 environment {
-    GITHUB_USER = "shlokdobriyal"
+    TARGET_REPO = ""
 }
 
 stages {
@@ -13,7 +13,7 @@ stages {
             script {
 
                 def changedFiles = bat(
-                    script: 'git diff --name-only HEAD~1 HEAD',
+                    script: '@git diff --name-only HEAD~1 HEAD',
                     returnStdout: true
                 ).trim()
 
@@ -25,16 +25,13 @@ stages {
                     env.TARGET_REPO = "gcc-mirror-repo"
                     echo "GCC Environment Selected"
 
-                }
-                else if (changedFiles.contains("mini-dev-config/")) {
+                } else if (changedFiles.contains("mini-dev-config/")) {
 
                     env.TARGET_REPO = "mini-dev-mirror-repo"
                     echo "Mini Dev Environment Selected"
 
-                }
-                else {
+                } else {
 
-                    env.TARGET_REPO = ""
                     echo "Default Environment Selected"
                 }
             }
@@ -70,6 +67,16 @@ stages {
         }
     }
 }
-```
+
+post {
+    success {
+        echo 'Pipeline completed successfully'
+    }
+
+    failure {
+        echo 'Pipeline failed'
+    }
+}
+
 
 }
