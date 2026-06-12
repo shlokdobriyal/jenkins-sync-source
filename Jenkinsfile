@@ -31,6 +31,7 @@ stages {
 
                 } else {
 
+                    env.TARGET_REPO = ""
                     echo "Default Environment Selected"
                 }
             }
@@ -38,32 +39,44 @@ stages {
     }
 
     stage('Mirror Repository') {
-
-        when {
-            expression {
-                return env.TARGET_REPO?.trim()
-            }
-        }
-
         steps {
+            script {
 
-            withCredentials([
-                usernamePassword(
-                    credentialsId: 'github-creds',
-                    usernameVariable: 'GIT_USER',
-                    passwordVariable: 'GIT_TOKEN'
-                )
-            ]) {
+                if (env.TARGET_REPO == null || env.TARGET_REPO == "") {
+                    echo "No mirroring required"
+                    return
+                }
 
-                bat """
-                git remote remove mirror 2>NUL
+                echo "Mirroring to ${env.TARGET_REPO}"
 
-                git remote add mirror https://%GIT_USER%:%GIT_TOKEN%@github.com/shlokdobriyal/%TARGET_REPO%.git
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'github-creds',
+                        usernameVariable: 'GIT_USER',
+                        passwordVariable: 'GIT_TOKEN'
+                    )
+                ]) {
 
-                git push --mirror mirror
-                """
+                    bat """
+                    git remote remove mirror 2>NUL
+
+                    git remote add mirror https://%GIT_USER%:%GIT_TOKEN%@github.com/shlokdobriyal/%TARGET_REPO%.git
+
+                    git push --mirror mirror
+                    """
+                }
             }
         }
+    }
+}
+
+post {
+    success {
+        echo 'Pipeline completed successfully'
+    }
+
+    failure {
+        echo 'Pipeline failed'
     }
 }
 
