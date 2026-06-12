@@ -1,7 +1,6 @@
 pipeline {
 agent any
 
-```
 environment {
     TARGET_REPO = ""
 }
@@ -67,6 +66,5 @@ stages {
         }
     }
 }
-```
 
 }
