@@ -1,9 +1,7 @@
+def targetRepo = ""
+
 pipeline {
 agent any
-
-environment {
-    TARGET_REPO = ""
-}
 
 stages {
 
@@ -21,17 +19,17 @@ stages {
 
                 if (changedFiles.contains("gcc-config/")) {
 
-                    env.TARGET_REPO = "gcc-mirror-repo"
+                    targetRepo = "gcc-mirror-repo"
                     echo "GCC Environment Selected"
 
                 } else if (changedFiles.contains("mini-dev-config/")) {
 
-                    env.TARGET_REPO = "mini-dev-mirror-repo"
+                    targetRepo = "mini-dev-mirror-repo"
                     echo "Mini Dev Environment Selected"
 
                 } else {
 
-                    env.TARGET_REPO = ""
+                    targetRepo = ""
                     echo "Default Environment Selected"
                 }
             }
@@ -42,12 +40,12 @@ stages {
         steps {
             script {
 
-                if (env.TARGET_REPO == null || env.TARGET_REPO == "") {
+                echo "Target Repo = ${targetRepo}"
+
+                if (targetRepo == "") {
                     echo "No mirroring required"
                     return
                 }
-
-                echo "Mirroring to ${env.TARGET_REPO}"
 
                 withCredentials([
                     usernamePassword(
@@ -60,7 +58,7 @@ stages {
                     bat """
                     git remote remove mirror 2>NUL
 
-                    git remote add mirror https://%GIT_USER%:%GIT_TOKEN%@github.com/shlokdobriyal/%TARGET_REPO%.git
+                    git remote add mirror https://%GIT_USER%:%GIT_TOKEN%@github.com/shlokdobriyal/${targetRepo}.git
 
                     git push --mirror mirror
                     """
